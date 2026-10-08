@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<kml xmlns="http://www.opengis.net/kml/2.2">
+  <Document>
+    <name>Mixed Geospatial Entities</name>
+    <Placemark>
+      <name>Survey Marker 101</name>
+      <description>Geodetic benchmark station</description>
+      <Point>
+        <coordinates>-73.9800,40.7500,0</coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>Pipeline Alpha</name>
+      <LineString>
+        <coordinates>
+          -73.9800,40.7500,0
+          -73.9700,40.7600,0
+        </coordinates>
+      </LineString>
+    </Placemark>
+    <Placemark>
+      <name>Reservoir Boundary</name>
+      <Polygon>
+        <outerBoundaryIs>
+          <LinearRing>
+            <coordinates>
+              -73.9650,40.7850,0
+              -73.9600,40.7800,0
+              -73.9550,40.7850,0
+              -73.9600,40.7900,0
+              -73.9650,40.7850,0
+            </coordinates>
+          </LinearRing>
+        </outerBoundaryIs>
+      </Polygon>
+    </Placemark>
+  </Document>
+</kml>

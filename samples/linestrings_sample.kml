@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<kml xmlns="http://www.opengis.net/kml/2.2">
+  <Document>
+    <name>Transit Lines</name>
+    <Placemark>
+      <name>Broadway Corridor</name>
+      <description>Main transit avenue</description>
+      <LineString>
+        <coordinates>
+          -73.9851,40.7484,0
+          -73.9868,40.7553,0
+          -73.9830,40.7620,0
+          -73.9760,40.7700,0
+        </coordinates>
+      </LineString>
+    </Placemark>
+    <Placemark>
+      <name>Crosstown Boulevard</name>
+      <LineString>
+        <coordinates>
+          -74.0000,40.7500,0
+          -73.9700,40.7500,0
+        </coordinates>
+      </LineString>
+    </Placemark>
+  </Document>
+</kml>

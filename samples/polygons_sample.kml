@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<kml xmlns="http://www.opengis.net/kml/2.2">
+  <Document>
+    <name>New York Survey Zones</name>
+    <description>Sample polygons representing urban zones</description>
+    <Placemark>
+      <name>Zone Alpha (Park Reserve)</name>
+      <description>Protected urban green space</description>
+      <ExtendedData>
+        <Data name="zone_type"><value>Recreational</value></Data>
+        <Data name="surveyor"><value>Alice Green</value></Data>
+      </ExtendedData>
+      <Polygon>
+        <outerBoundaryIs>
+          <LinearRing>
+            <coordinates>
+              -73.9712,40.7831,0
+              -73.9818,40.7681,0
+              -73.9580,40.7648,0
+              -73.9495,40.7798,0
+              -73.9712,40.7831,0
+            </coordinates>
+          </LinearRing>
+        </outerBoundaryIs>
+      </Polygon>
+    </Placemark>
+    <Placemark>
+      <name>Zone Beta (Commercial Hub)</name>
+      <description>High density commercial district</description>
+      <ExtendedData>
+        <Data name="zone_type"><value>Commercial</value></Data>
+      </ExtendedData>
+      <Polygon>
+        <outerBoundaryIs>
+          <LinearRing>
+            <coordinates>
+              -73.9855,40.7580,0
+              -73.9855,40.7520,0
+              -73.9770,40.7520,0
+              -73.9770,40.7580,0
+              -73.9855,40.7580,0
+            </coordinates>
+          </LinearRing>
+        </outerBoundaryIs>
+      </Polygon>
+    </Placemark>
+  </Document>
+</kml>
