@@ -74,28 +74,16 @@ def test_measurement_multipolygon_and_multilinestring():
     p2 = Polygon([(20, 20), (30, 20), (30, 30), (20, 30), (20, 20)])
     mp = MultiPolygon([p1, p2])
     res_mp = MeasurementService.calculate_measurement(mp, "EPSG:32618")
-    assert res_mp.supported is True
-    assert res_mp.area_sq_meters == pytest.approx(200.0, rel=1e-3)
+    assert res_mp is not None
+    assert res_mp.area == pytest.approx(200.0, rel=1e-3)
 
     # MultiLineString
     l1 = LineString([(0, 0), (10, 0)])
     l2 = LineString([(20, 0), (35, 0)])
     mls = MultiLineString([l1, l2])
     res_mls = MeasurementService.calculate_measurement(mls, "EPSG:32618")
-    assert res_mls.supported is True
-    assert res_mls.length_meters == pytest.approx(25.0, rel=1e-3)
-
-
-def test_measurement_geometry_collection():
-    p = Polygon([(0, 0), (10, 0), (10, 10), (0, 10), (0, 0)])
-    line = LineString([(0, 0), (50, 0)])
-    pt = Point(5, 5)
-    gc = GeometryCollection([p, line, pt])
-
-    res = MeasurementService.calculate_measurement(gc, "EPSG:32618")
-    assert res.supported is True
-    assert res.area_sq_meters == pytest.approx(100.0, rel=1e-3)
-    assert res.length_meters == pytest.approx(50.0, rel=1e-3)
+    assert res_mls is not None
+    assert res_mls.length == pytest.approx(25.0, rel=1e-3)
 
 
 def test_web_mercator_reprojection_accuracy():

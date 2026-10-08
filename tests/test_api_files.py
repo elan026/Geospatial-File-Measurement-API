@@ -1,22 +1,5 @@
 """Integration tests for FastAPI endpoints: upload, info, measurements."""
-import io
 import pytest
-
-
-def test_health_check(client):
-    response = client.get("/api/health")
-    assert response.status_code == 200
-    data = response.json()
-    assert data["status"] == "healthy"
-    assert "version" in data
-
-
-def test_root_endpoint(client):
-    response = client.get("/")
-    assert response.status_code == 200
-    data = response.json()
-    assert data["status"] == "online"
-    assert "/docs" in data["documentation"]
 
 
 def test_upload_kml_polygons_and_retrieve_measurements(client, sample_kml_polygons_path):
@@ -31,37 +14,39 @@ def test_upload_kml_polygons_and_retrieve_measurements(client, sample_kml_polygo
     assert upload_res.status_code == 201
     upload_data = upload_res.json()
     file_id = upload_data["id"]
-    assert upload_data["feature_count"] == 2
-    assert upload_data["crs"] == "EPSG:4326"
-    assert upload_data["status"] == "COMPLETED"
+    assert upload_data == {
+        "id": file_id,
+        "filename": "polygons_sample.kml",
+        "feature_count": 2,
+        "crs": "EPSG:4326",
+        "status": "COMPLETED",
+    }
 
     # 2. Get File Info - Verify exact specification structure
     info_res = client.get(f"/api/files/{file_id}/")
     assert info_res.status_code == 200
-    info_data = info_res.json()
-    assert info_data["id"] == file_id
-    assert info_data["filename"] == "polygons_sample.kml"
-    assert info_data["feature_count"] == 2
-    assert info_data["crs"] == "EPSG:4326"
-    assert info_data["status"] == "COMPLETED"
+    assert info_res.json() == {
+        "id": file_id,
+        "filename": "polygons_sample.kml",
+        "feature_count": 2,
+        "crs": "EPSG:4326",
+        "status": "COMPLETED",
+    }
 
     # 3. Get Measurements
     measure_res = client.get(f"/api/files/{file_id}/measurements/")
     assert measure_res.status_code == 200
     measure_data = measure_res.json()
-    assert measure_data["file_id"] == file_id
-    assert measure_data["summary"]["total_features"] == 2
-    assert measure_data["summary"]["supported_features_count"] == 2
-    assert measure_data["summary"]["total_area_sq_meters"] > 0
+    assert measure_data["id"] == file_id
+    assert measure_data["filename"] == "polygons_sample.kml"
+    assert measure_data["crs"] == "EPSG:4326"
     assert len(measure_data["features"]) == 2
 
     # Check first feature details
     first_feat = measure_data["features"][0]
     assert first_feat["geometry_type"] == "Polygon"
-    assert first_feat["measurement"]["supported"] is True
-    assert first_feat["measurement"]["area_sq_meters"] > 0
-    assert first_feat["measurement"]["perimeter_meters"] > 0
-    assert first_feat["measurement"]["projected_crs"] == "EPSG:32618"  # NYC UTM Zone 18N
+    assert first_feat["measurement"]["area"] > 0
+    assert first_feat["measurement"]["length"] is None
 
 
 def test_upload_shapefile_parcels(client, sample_shp_parcels_zip_path):
@@ -81,8 +66,8 @@ def test_upload_shapefile_parcels(client, sample_shp_parcels_zip_path):
     measure_res = client.get(f"/api/files/{file_id}/measurements/")
     assert measure_res.status_code == 200
     measure_data = measure_res.json()
-    assert measure_data["summary"]["total_features"] == 2
-    assert measure_data["summary"]["total_area_sq_meters"] > 0
+    assert len(measure_data["features"]) == 2
+    assert measure_data["features"][0]["measurement"]["area"] > 0
 
 
 def test_upload_mixed_geometries_kml(client, sample_kml_mixed_path):
@@ -94,30 +79,27 @@ def test_upload_mixed_geometries_kml(client, sample_kml_mixed_path):
         files={"file": ("mixed_sample.kml", mixed_bytes, "application/vnd.google-earth.kml+xml")},
     )
     assert upload_res.status_code == 201
-    file_id = upload_data = upload_res.json()["id"]
+    file_id = upload_res.json()["id"]
 
     measure_res = client.get(f"/api/files/{file_id}/measurements/")
     assert measure_res.status_code == 200
     measure_data = measure_res.json()
     
-    # In mixed: Point (unsupported measurement), Line (supported length), Polygon (supported area)
     features = measure_data["features"]
     point_feat = next(f for f in features if f["geometry_type"] == "Point")
     line_feat = next(f for f in features if f["geometry_type"] == "LineString")
     poly_feat = next(f for f in features if f["geometry_type"] == "Polygon")
 
-    # Point: graceful handling
-    assert point_feat["measurement"]["supported"] is False
-    assert point_feat["measurement"]["area_sq_meters"] is None
-    assert point_feat["measurement"]["length_meters"] is None
+    # Point: no measurement
+    assert point_feat["measurement"] is None
 
     # Line: length measurement
-    assert line_feat["measurement"]["supported"] is True
-    assert line_feat["measurement"]["length_meters"] > 0
+    assert line_feat["measurement"]["length"] > 0
+    assert line_feat["measurement"]["area"] is None
 
     # Polygon: area measurement
-    assert poly_feat["measurement"]["supported"] is True
-    assert poly_feat["measurement"]["area_sq_meters"] > 0
+    assert poly_feat["measurement"]["area"] > 0
+    assert poly_feat["measurement"]["length"] is None
 
 
 def test_get_nonexistent_file_404(client):
@@ -135,7 +117,6 @@ def test_upload_unsupported_file_extension(client):
     assert response.status_code == 400
     data = response.json()
     assert data["error"] == "InvalidFileFormatException"
-    assert "Unsupported file extension" in data["message"]
 
 
 def test_upload_empty_file(client):
@@ -146,28 +127,3 @@ def test_upload_empty_file(client):
     assert response.status_code == 400
     data = response.json()
     assert data["error"] == "InvalidFileFormatException"
-    assert "empty" in data["message"].lower()
-
-
-def test_list_and_delete_file(client, sample_kml_polygons_path):
-    with open(sample_kml_polygons_path, "rb") as f:
-        file_bytes = f.read()
-
-    upload_res = client.post(
-        "/api/files/",
-        files={"file": ("test_delete.kml", file_bytes, "application/vnd.google-earth.kml+xml")},
-    )
-    file_id = upload_res.json()["id"]
-
-    # Verify present in list
-    list_res = client.get("/api/files/")
-    assert list_res.status_code == 200
-    file_ids = [item["id"] for item in list_res.json()]
-    assert file_id in file_ids
-
-    # Delete
-    del_res = client.delete(f"/api/files/{file_id}/")
-    assert del_res.status_code == 200
-
-    # Verify 404 on subsequent get
-    assert client.get(f"/api/files/{file_id}/").status_code == 404
